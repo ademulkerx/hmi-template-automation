@@ -1,0 +1,24 @@
+description: Ultralytics best model trained on /content/Dataset/Dataset/Dataset.yaml
+author: Ultralytics
+date: '2024-04-08T15:41:44.369409'
+version: 8.1.30
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: L
+  1: PUZLE
+  2: ENGEL
+  3: OYUNKOLU
+  4: UZUNDUVAR
+  5: cikmazduvar
+  6: TOP
+  7: diken
+  8: zehir
+  9: coin
+  10: miknatis
