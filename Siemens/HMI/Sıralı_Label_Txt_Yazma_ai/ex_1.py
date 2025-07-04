@@ -38,17 +38,21 @@ def collect_positions():
     ESC tuşuna basıldığında kaydı durdurur.
     """
     print("Labellere tıklayın. ESC tuşuna bastığınızda kayıt tamamlanacak.")
-    while True:
-        if mouse.is_pressed(button='left'):  # Sol tık algılandığında pozisyonu kaydet
-            x, y = mouse.get_position()
+
+    with open("Pos_List.txt", "r") as file:
+        lines = file.readlines()
+
+
+        # Sonraki satırları ise led pozisyonu olarak kaydet
+    for line in lines:
+        line = line.strip()  # Satırdaki boşlukları temizle
+        if line:
+            x, y = map(int, line.split(":"))  # ':' ile ayır ve sayıya dönüştür
             label_positions.append((x, y))
-            print(f"Kaydedilen koordinat: ({x}, {y})")
-            sayac += 1
-            show_icon(x, y,sayac)
-            time.sleep(0.3)  # Tıklama sonrası kısa bir gecikme
-        if keyboard.is_pressed('esc'):  # ESC tuşuna basıldığında döngüyü kır
-            print("Koordinat toplama tamamlandı.")
-            break
+            print(f"Nesne pozisyonu kaydedildi: ({x}, {y})")
+
+
+
 
 
 def paste_values_from_txt(file_path):
@@ -81,7 +85,7 @@ def paste_values_from_txt(file_path):
 # Ana program
 if __name__ == "__main__":
     print("Python program başladı.")
-
+    time.sleep(3)
     # 1. Aşama: Pozisyonları toplama
     collect_positions()
 
@@ -97,9 +101,10 @@ if __name__ == "__main__":
 
 
 
-# Program  ekrandaki labellere veri yazar sırası ile.
-# step-1: Sırası ile veri yazılacak labellere tıkla
-# step-2: Tamamı kaydedildikten sonra esc ye bas ve bekle
+# Program  ekrandaki labellere otomatik bir şekilde veri yazar sırası ile.
+# step-1: Sıralı_Adres(Name)_Led_Yazma_ai/Step_1.py ile pozisyonlar kaydedildikten sonra bu otomatik işlem kullanılır
+# step-2: labellere yazılacak veri data.txt dosyasına kaydedilmiş olması gerekir.
+# Programı başlattıktan sonra pycharmı hemen arka plana al ve dokunma pc ye, 3 saniye içinde yazma işlemi başlayacak.
 
 # 8 Ocak 2025 | 04:51
 # Yazar: Adem Ülker

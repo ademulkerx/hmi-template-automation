@@ -6,6 +6,7 @@ import pyautogui
 import time
 import keyboard
 import mouse
+import winsound
 
 class ScreenshotApp:
     def __init__(self, root):
@@ -41,7 +42,7 @@ class ScreenshotApp:
         # Çıkış butonunu ekleyelim
         self.exit_button = tk.Button(self.root, text="Çıkış", command=self.quit_program,
                                      bg="red", fg="white", font=("Arial", 12), bd=0)
-        self.exit_button.place(x=self.screenshot.width - 80, y=10)  # Sağ üst köşeye yerleştiriyoruz
+        self.exit_button.place(x=self.screenshot.width - 80, y=40)  # Sağ üst köşeye yerleştiriyoruz
 
         # Tag yazılacak pozisyonu seçmek için buton
         self.select_tag_position_button = tk.Button(self.root, text="Tag Yazılacak Konumu Seç ve Başlat",
@@ -56,6 +57,7 @@ class ScreenshotApp:
         self.num_objects = 0  # Nesne sayısını burada başlatıyoruz
         self.tags = []  # Bu liste tagları tutacak
 
+
     def select_tag_position(self):
         """Tag yazılacak pozisyonunu seçmek için buton"""
         # Pencereyi gizleyelim, işlem arka planda devam etsin
@@ -66,7 +68,7 @@ class ScreenshotApp:
         while True:
             if mouse.is_pressed(button='left'):  # Sol fare tuşu ile tıklama kontrolü
                 x, y = mouse.get_position()
-
+                winsound.Beep(1000, 100)
                 self.tag_position = (x, y)
                 print(f"Tag yazılacak pozisyon kaydedildi: {self.tag_position}")
                 break  # Tag pozisyonu kaydedildikten sonra döngüden çıkıyoruz
@@ -75,6 +77,32 @@ class ScreenshotApp:
 
         # Pozisyon toplamaya başla
         self.start_position_collection()
+
+    def save_positions_to_file(self):
+        """Pozisyonları dosyaya kaydetme"""
+        with open("Pos_List.txt", "w") as file:
+            # Tag yazılacak pozisyonu dosyaya ekliyoruz
+            file.write(f"{self.tag_position[0]}:{self.tag_position[1]}\n")
+
+            # LED pozisyonlarını yazıyoruz
+            for led_pos in self.led_positions:
+                file.write(f"{led_pos[0]}:{led_pos[1]}\n")
+
+        """Pozisyonları dosyaya kaydetme shift yaparak kaydet labeller için"""
+        with open("D:\PycharmProjects\Siemens\HMI\Sıralı_Label_Txt_Yazma_ai\Pos_List.txt", "w") as file:
+            # LED pozisyonlarına + 35 ekleyerek label pozisyonlarını yazıyoruz
+            for led_pos in self.led_positions:
+                file.write(f"{led_pos[0]+35}:{led_pos[1]}\n")
+
+        #
+
+        print(f"Pozisyonlar 'Pos_List.txt' dosyasına kaydedildi.")
+        winsound.Beep(1000, 100)
+        time.sleep(0.3)
+        winsound.Beep(1000, 100)
+        time.sleep(0.3)
+        winsound.Beep(1000, 100)
+        self.root.quit()
 
     def start_position_collection(self):
         """LED pozisyonlarını toplamaya başlar"""
@@ -95,46 +123,10 @@ class ScreenshotApp:
 
             if keyboard.is_pressed('enter'):  # Enter tuşu ile döngüyü sonlandırma
                 print("Pozisyon toplama tamamlandı.")
-                self.write_tags_to_position()  # Tag yazma işlemine başla
+                self.save_positions_to_file()
                 break  # Döngüden çıkma
 
-    def write_tags_to_position(self):
-        """Data.txt dosyasındaki verileri yazma işlemi"""
-        with open("data.txt", "r", encoding="utf-8") as file:
-            tags = file.readlines()
 
-        # Satırlardan yeni satır karakterlerini temizle
-        tags = [tag.strip() for tag in tags]
-
-        # LED pozisyonlarını ve tagları yazma
-        if not self.led_positions:  # Eğer LED pozisyonları boşsa, kırmızı nesneleri tespit et
-            print("LED pozisyonları boş, kırmızı nesneleri tespit etmeliyim.")
-            return
-
-        for i, (x, y) in enumerate(self.led_positions):
-            if i >= len(tags):
-                print("Tüm taglar yerleştirildi. Fazla nesneler atlandı.")
-                break
-
-            # LED'e tıklama
-            pyautogui.click(x, y)
-            time.sleep(0.2)
-
-            # Tag yazma alanına çift tıklama
-            pyautogui.click(self.tag_position[0], self.tag_position[1], clicks=2, interval=0.1)
-            time.sleep(0.3)
-
-            # Tagı yazma Eğer Boş ise Bir defa backspace yap
-            if tags[i] == "":
-                keyboard.press_and_release('backspace')
-            else:
-                keyboard.write(tags[i])
-
-            print(f"Nesne ({x}, {y}) için '{tags[i]}' tagı yazıldı.")
-            time.sleep(0.3)
-            # Enter'e tıklama
-            keyboard.press_and_release('enter')
-            time.sleep(0.4)
 
     def on_button_press(self, event):
         """Fare ile seçim başladığında (ilk tıklama)"""
@@ -210,7 +202,7 @@ class ScreenshotApp:
             self.detected_objects.append((real_x, real_y, w, h))
 
             # LED pozisyonlarını self.led_positions listesine ekle (Dairelerin merkez koordinatları)
-            self.led_positions = [(x + w // 2, y + h // 2) for (x, y, w, h) in detected_objects]
+            self.led_positions = [((x + w // 2) + self.start_x, (y + h // 2) + self.start_y) for (x, y, w, h) in detected_objects]
 
         self.num_objects = len(detected_objects)  # num_objects değerini güncelle
 
@@ -222,8 +214,8 @@ class ScreenshotApp:
         img_with_objects = cv2.cvtColor(img_with_objects, cv2.COLOR_RGB2BGR)
 
         for idx, (x, y, w, h) in enumerate(self.detected_objects):
-            cv2.rectangle(img_with_objects, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(img_with_objects, f"Nesne {idx + 1}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0),
+            cv2.rectangle(img_with_objects, (x, y), (x + w, y + h), (255, 255, 0), 2)
+            cv2.putText(img_with_objects, f"ID: {idx + 1}", (x+w+10, y +(int)(h/2)+10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0),
                         2)
 
             # Dairenin merkezi
@@ -247,8 +239,28 @@ class ScreenshotApp:
         self.root.quit()
 
 
+
 if __name__ == "__main__":
     time.sleep(3)
     root = tk.Tk()
     app = ScreenshotApp(root)
     root.mainloop()
+
+    # Program  ekrandaki  (kırmızı) Led  nesnelerinin pozisyonlarını ve hemen yanındaki label konumlarınıda yakalar.
+    # step-1: Ekran yakılnaştırma oranını %165(Hepsini algılayacak şekilde değiştirilebilir)
+    # - şeklinde ayarla ve tag yazılacak ayar sayfasınıda tia portal dan kopar ve küçült bir kenarda dursun, tag yazılacak sekmede açık kalsın
+    # step-2: program a start ver, 3 saniye sonra başlayacak ve hangi nesnelerde işlem olacak ise onları seç dikdörtgen ile(sol click nasılı tutarak)
+    # step-3: Seçimden sonra doğrı sıra ile id yazıldı ise tag kaydetme butonuna(sağ üstte) tıkla ve tagların yazılacağı textboxa tıkla. 1 defa bip sesi gelirse kayıt tamamlanır
+    #  1 defa bip sesi geldikten sonra programın kaydedilmesi için enter e bas.
+
+    #  Pozsiyon kayıtlarını Pos_List.txt dosyasına yapacak ve ilk kayıt tag yazılacak textbox olacak, labellerin pozisyonu ise Sıralı_Label_Txt_Yazma_ai/Pos_List.txt yazacak.
+    #  Label pozisyonlar ledlerden 35 pixel sağda olacak şekilde ayarlı sabit olarak ve gerekirse değiştirilebilir.
+
+    #  Bu programdan sonra step 2 başlatılır ve program'a dokunulmaz.
+
+
+    # 13 Ocak 2025 | 13:21
+    # Yazar: Adem Ülker
+
+
+
